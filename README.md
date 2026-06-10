@@ -1,18 +1,42 @@
-# octo-sts/action
+# `octo-sts/action`
 
-This action exchanges the workflow's identity token for a Github App token
-from the Octo STS service, in accordance with the trust policy of the target
-organization or repository.
+This action federates the GitHub Actions identity token for a Github App token
+according to the Trust Policy in the target organization or repository.
 
+## Usage
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/octo-sts/action](https://github.com/octo-sts/action).
+```yaml
+permissions:
+  id-token: write # Needed to federate tokens.
 
-## Versions
+steps:
+- uses: octo-sts/action@main
+  id: octo-sts
+  with:
+    scope: your-org/your-repo
+    identity: foo
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.0.1 | [`v1.0.1`](https://github.com/chainguard-actions/octo-sts-action/tree/v1.0.1) | [`e480437`](https://github.com/octo-sts/action/commit/e480437973a6f6ac2e9caa40ecabedc870d76395) |
-| v1.0.3 | [`v1.0.3`](https://github.com/chainguard-actions/octo-sts-action/tree/v1.0.3) | [`d6c70ad`](https://github.com/octo-sts/action/commit/d6c70ad3b9ac85df6da6b9749014d7283987cfec) |
+- env:
+    GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+  run: |
+    gh repo list
+```
+
+The above will load a "trust policy" from `.github/chainguard/foo.sts.yaml` in
+the repository `your-org/your-repo`.  Suppose this contains the following, then
+workflows in `my-org/my-repo` will receive a token with the specified
+permissions on `my-org/my-repo`.
+
+```yaml
+issuer: https://token.actions.githubusercontent.com
+subject: repo:my-org/my-repo:ref:refs/heads/main
+
+permissions:
+  contents: read
+  issues: write
+```
+
+See the [Use Action](./.github/workflows/use-action.yaml) workflow for a working example of this, that opens an issue in this repository.
 
 ## Privacy
 
