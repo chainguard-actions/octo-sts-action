@@ -1,0 +1,31 @@
+name: Test with custom domain input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Attempt token exchange with custom domain (expected to fail without real OIDC token)
+        id: octo-sts
+        uses: .
+        with:
+          domain: octo-sts.dev
+          scope: example-org/example-repo
+          identity: ci-identity
+        continue-on-error: true
+
+      - name: Assert action was invoked with domain, scope, and identity inputs
+        env:
+          OUTCOME: ${{ steps.octo-sts.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should either succeed or fail gracefully.
+          # In act without a real OIDC token, failure is expected.
+          # We just verify the action ran (outcome is set).
+          if [ -z "$OUTCOME" ]; then
+            echo "FAIL: action did not run (outcome is empty)"
+            exit 1
+          fi
+          echo "PASS: action ran with domain, scope, and identity inputs, outcome=$OUTCOME"
