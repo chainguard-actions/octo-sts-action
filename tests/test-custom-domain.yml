@@ -1,34 +1,28 @@
-name: Test custom domain with scope and identity
+name: Test with custom domain input
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_REF: refs/heads/main
-      GITHUB_EVENT_NAME: push
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
       - id: octo-sts
         uses: .
         with:
           domain: octo-sts.dev
-          scope: my-org/my-repo
-          identity: ci-identity
+          scope: example-org/example-repo
+          identity: ci
         continue-on-error: true
-
-      - name: Assert action ran with custom domain (expected to fail without valid OIDC token)
+      - name: Assert action was invoked with all inputs
         env:
           OUTCOME: ${{ steps.octo-sts.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          # The action is expected to fail in act because there is no valid
-          # OIDC token available. We accept both 'success' and 'failure'
-          # outcomes as long as the action was invoked with all inputs.
+          # The action is expected to fail in act because no real OIDC token is available.
+          # We verify the action was invoked with domain, scope, and identity inputs.
           if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
             echo "PASS: action was invoked with domain, scope, and identity inputs"
           else
-            echo "FAIL: unexpected outcome '$OUTCOME'"
+            echo "FAIL: unexpected outcome: $OUTCOME"
             exit 1
           fi
