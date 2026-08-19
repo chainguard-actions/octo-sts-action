@@ -1,28 +1,33 @@
-name: Test with custom domain input
+name: Test custom domain input
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - id: octo-sts
+
+      - id: action
         uses: .
-        with:
-          domain: octo-sts.dev
-          scope: example-org/example-repo
-          identity: ci
         continue-on-error: true
-      - name: Assert action was invoked with all inputs
+        with:
+          domain: invalid.example.invalid
+          scope: example-org/example-repo
+          identity: example-policy
+
+      - name: Assert action failed when using unreachable custom domain
         env:
-          OUTCOME: ${{ steps.octo-sts.outcome }}
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          # The action is expected to fail in act because no real OIDC token is available.
-          # We verify the action was invoked with domain, scope, and identity inputs.
-          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action was invoked with domain, scope, and identity inputs"
-          else
-            echo "FAIL: unexpected outcome: $OUTCOME"
+          # The action should fail because the custom domain is unreachable.
+          # This verifies the domain input is accepted and used in the STS request.
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with unreachable domain, got outcome=$OUTCOME"
             exit 1
           fi
+          echo "PASS: action correctly failed when custom domain was unreachable"
