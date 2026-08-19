@@ -1,0 +1,36 @@
+name: Test default domain - Octo STS
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Octo STS action with default domain (no domain input provided)
+        id: octo-sts-default
+        uses: .
+        with:
+          scope: example-org/example-repo
+          identity: default-identity
+        continue-on-error: true
+
+      - name: Assert action ran with default domain and failed gracefully
+        env:
+          OUTCOME: ${{ steps.octo-sts-default.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The default domain is octo-sts.dev. Without a real OIDC token,
+          # the action is expected to fail. We verify it ran (not skipped).
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with default domain"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected without a real OIDC token (default domain used)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi

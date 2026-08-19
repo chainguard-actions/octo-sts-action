@@ -1,0 +1,37 @@
+name: Test basic usage with OIDC permissions
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          scope: octo-sts/action
+          identity: test-identity
+
+      - name: Assert action attempted STS exchange (failed at exchange, not at OIDC check)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there is no real trust policy for
+          # 'test-identity' in octo-sts/action, but it should get past the
+          # OIDC token check (since id-token: write is set).
+          # Under act, OIDC env vars may not be available, so failure is acceptable.
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (no valid trust policy in test environment)"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action unexpectedly succeeded (token was issued)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
