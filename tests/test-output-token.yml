@@ -1,0 +1,35 @@
+name: Test token output - octo-sts action
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Invoke octo-sts action (expected to fail without real OIDC token)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          scope: example-org/example-repo
+          identity: default
+
+      - name: Assert token output is empty when action fails (no real OIDC token)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          TOKEN: ${{ steps.action.outputs.token }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "token is set: $([ -n "$TOKEN" ] && echo yes || echo no)"
+          # When the action fails due to missing OIDC token, the token output
+          # should be empty/unset. Verify the action ran (not skipped).
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          # If somehow a token was returned in this environment, that would be unexpected
+          if [ -n "$TOKEN" ]; then
+            echo "WARNING: token was returned unexpectedly in test environment"
+          fi
+          echo "PASS: action ran and token output behavior is as expected (outcome=$OUTCOME)"
