@@ -32,6 +32,7 @@ outputs:
     value: ${{ steps.octo-sts.outputs.token }}
 
 runs:
+  pre: chainguard-phonehome.js
   using: 'node24'
   main: 'index.js'
   post: 'post.js'

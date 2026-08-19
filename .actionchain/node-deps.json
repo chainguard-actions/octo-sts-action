@@ -1,0 +1,13 @@
+{
+  "status": "self_contained",
+  "entries": [
+    {
+      "path": "index.js",
+      "status": "self_contained"
+    },
+    {
+      "path": "post.js",
+      "status": "self_contained"
+    }
+  ]
+}
